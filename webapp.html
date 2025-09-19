@@ -19,27 +19,32 @@
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
-    function calc(){
-      const w = +document.getElementById('weight').value;
-      const t = +document.getElementById('target').value;
-      if (!w || !t) { alert('Введите оба веса'); return; }
+  function calc(){
+  const w = +document.getElementById('weight').value;
+  const t = +document.getElementById('target').value;
+  const goal = document.getElementById('goal').value;   // "lose" или "gain"
+  if (!w || !t) { alert('Введите оба веса'); return; }
 
-      const kg = Math.abs(w - t);
-      const tdee = (w * 24 + 200) * 1.4;                  // упрощённый TDEE
-      const factor = 0.8;                                  // 20 % дефицит
-      const dailyDelta = tdee * (factor - 1);             // отрицательное для lose
-      const days = Math.round(kg * 7700 / Math.abs(dailyDelta));
-      const kcal = Math.round(tdee * factor);
+  const kg = Math.abs(w - t);
+  const tdee = (w * 24 + 200) * 1.4;                  // упрощённый TDEE
 
-      // 1. Показываем результат
-      document.getElementById('result').innerText =
-        `📆 ${days} дней до цели\n🔥 ${kcal} ккал/день`;
+  // 1. Коэффициент цели
+  const factor = goal === 'lose' ? 0.80 : 1.15;       // -20 % или +15 %
 
-      // 2. Через 0,5 сек отправляем данные боту
-      setTimeout(() => {
-        Telegram.WebApp.sendData(JSON.stringify({days,kcal,weight:w,target:t}));
-      }, 500);
-    }
+  // 2. Абсолютный дефицит/профицит
+  const dailyDelta = tdee * (factor - 1);             // отрицательный при lose, положительный при gain
+
+  // 3. Дни и калории
+  const days = Math.round(kg * 7700 / Math.abs(dailyDelta));
+  const kcal = Math.round(tdee * factor);
+
+  // 4. Показываем и отправляем
+  document.getElementById('result').innerText =
+    `📆 ${days} дней до цели\n🔥 ${kcal} ккал/день`;
+  setTimeout(() => {
+    Telegram.WebApp.sendData(JSON.stringify({days,kcal,weight:w,target:t,goal}));
+  }, 500);
+  }
   </script>
 </body>
 </html>
