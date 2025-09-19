@@ -7,7 +7,7 @@
     body{font-family:Arial;background:#f7f7f7;padding:20px}
     input{width:100%;padding:8px;margin:6px 0}
     button{width:100%;padding:10px;background:#ff6b00;color:#fff;border:0;border-radius:6px}
-    #result{margin-top:15px;font-weight:bold}
+    #result{margin-top:15px;font-weight:bold;color:#222}
   </style>
 </head>
 <body>
@@ -17,26 +17,29 @@
   <button onclick="calc()">Рассчитать</button>
   <div id="result"></div>
 
-  <script>
-  function calc(){
-  const w = +document.getElementById('weight').value;
-  const t = +document.getElementById('target').value;
-  const goal = document.getElementById('goal').value;   // "lose" или "gain"
-  const kg = Math.abs(w - t);
-  // 1. TDEE (упрощённо)
-  const tdee = (w * 24 + 200) * 1.4;          // можно заменить на точный из таблицы
-  // 2. Коэффициент цели
-  const factor = goal === 'lose' ? 0.8 : 1.15;   // lose = -20 %, gain = +15 %
-  // 3. Абсолютный дефицит/профицит
-  const dailyDelta = tdee * (factor - 1);      // отрицательный для lose, положительный для gain
-  // 4. Дни и калории
-  const days = Math.round(kg * 7700 / Math.abs(dailyDelta));
-  const kcal = Math.round(tdee * factor);
-  document.getElementById('result').innerText =
-    `📆 ${days} дней до цели\n🔥 ${kcal} ккал/день`;
-  Telegram.WebApp.sendData(JSON.stringify({days,kcal,weight:w,target:t}));
-  }
-  </script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    function calc(){
+      const w = +document.getElementById('weight').value;
+      const t = +document.getElementById('target').value;
+      if (!w || !t) { alert('Введите оба веса'); return; }
+
+      const kg = Math.abs(w - t);
+      const tdee = (w * 24 + 200) * 1.4;                  // упрощённый TDEE
+      const factor = 0.8;                                  // 20 % дефицит
+      const dailyDelta = tdee * (factor - 1);             // отрицательное для lose
+      const days = Math.round(kg * 7700 / Math.abs(dailyDelta));
+      const kcal = Math.round(tdee * factor);
+
+      // 1. Показываем результат
+      document.getElementById('result').innerText =
+        `📆 ${days} дней до цели\n🔥 ${kcal} ккал/день`;
+
+      // 2. Через 0,5 сек отправляем данные боту
+      setTimeout(() => {
+        Telegram.WebApp.sendData(JSON.stringify({days,kcal,weight:w,target:t}));
+      }, 500);
+    }
+  </script>
 </body>
 </html>
