@@ -25,21 +25,30 @@
   if (!w || !t || w <= 0 || t <= 0) { alert('Введите корректные веса'); return; }
 
   const delta = t - w;                      // + = набор, − = похудение
-  const goal  = delta > 0 ? 'gain' : 'lose'; // автоматический выбор
+  const goal  = delta > 0 ? 'gain' : 'lose';
   const kg    = Math.abs(delta);
 
-  const tdee  = (w * 24 + 200) * 1.4;       // упрощённый TDEE
+  // 1. Коэффициент активности ПО УМОЛЧАНИЮ
+  const activityFactor = goal === 'lose' ? 1.2 : 1.55;   // минимальный vs средний
+  const activityText   = goal === 'lose' 
+    ? 'минимальный (офисная работа, без тренировок)' 
+    : 'средний (3–5 тренировок/неделю)';
+
+  // 2. TDEE и цель
+  const tdee = (w * 24 + 200) * activityFactor;
   const factor = goal === 'lose' ? 0.80 : 1.15;   // −20 % или +15 %
-  const dailyDelta = tdee * (factor - 1);   // знак автоматический
+  const dailyDelta = tdee * (factor - 1);
   const days = Math.round(kg * 7700 / Math.abs(dailyDelta));
   const kcal = Math.round(tdee * factor);
 
+  // 3. Показываем результат
   document.getElementById('result').innerText =
-    `📆 ${days} дней до цели\n🔥 ${kcal} ккал/день`;
+    `📆 ${days} дней до цели\n🔥 ${kcal} ккал/день\n📊 Уровень активности: ${activityText}`;
 
+  // 4. Отправляем боту
   if (window.Telegram && window.Telegram.WebApp) {
     setTimeout(() => {
-      Telegram.WebApp.sendData(JSON.stringify({days,kcal,weight:w,target:t,goal}));
+      Telegram.WebApp.sendData(JSON.stringify({days,kcal,weight:w,target:t,goal,activityFactor,activityText}));
     }, 500);
   }
 }
