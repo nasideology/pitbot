@@ -14,37 +14,49 @@
   <h3>Рассчитаю ваш результат за 3 секунды</h3>
   <input id="weight" type="number" placeholder="Текущий вес, кг">
   <input id="target" type="number" placeholder="Желаемый вес, кг">
+  <select id="goal">
+    <option value="lose">Хочу похудеть</option>
+    <option value="gain">Хочу набрать</option>
+  </select>
   <button onclick="calc()">Рассчитать</button>
   <div id="result"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
-  function calc(){
-  const w = +document.getElementById('weight').value;
-  const t = +document.getElementById('target').value;
-  const goal = document.getElementById('goal').value;   // "lose" или "gain"
-  if (!w || !t) { alert('Введите оба веса'); return; }
+    function calc(){
+      console.log('[calc] start');                // ← отладка
+      const w = Number(document.getElementById('weight').value);
+      const t = Number(document.getElementById('target').value);
+      const goal = document.getElementById('goal').value;
+      console.log({w, t, goal});
 
-  const kg = Math.abs(w - t);
-  const tdee = (w * 24 + 200) * 1.4;                  // упрощённый TDEE
+      if (!w || !t || w <= 0 || t <= 0) {
+        alert('Введите корректные веса');
+        return;
+      }
 
-  // 1. Коэффициент цели
-  const factor = goal === 'lose' ? 0.80 : 1.15;       // -20 % или +15 %
+      const kg = Math.abs(w - t);
+      const tdee = (w * 24 + 200) * 1.4;                  // упрощённый TDEE
+      const factor = goal === 'lose' ? 0.80 : 1.15;       // -20 % или +15 %
+      const dailyDelta = tdee * (factor - 1);             // знак автоматический
+      const days = Math.round(kg * 7700 / Math.abs(dailyDelta));
+      const kcal = Math.round(tdee * factor);
 
-  // 2. Абсолютный дефицит/профицит
-  const dailyDelta = tdee * (factor - 1);             // отрицательный при lose, положительный при gain
+      console.log({days, kcal});                          // ← отладка
 
-  // 3. Дни и калории
-  const days = Math.round(kg * 7700 / Math.abs(dailyDelta));
-  const kcal = Math.round(tdee * factor);
+      // 1. Показываем
+      document.getElementById('result').innerText =
+        `📆 ${days} дней до цели\n🔥 ${kcal} ккал/день`;
 
-  // 4. Показываем и отправляем
-  document.getElementById('result').innerText =
-    `📆 ${days} дней до цели\n🔥 ${kcal} ккал/день`;
-  setTimeout(() => {
-    Telegram.WebApp.sendData(JSON.stringify({days,kcal,weight:w,target:t,goal}));
-  }, 500);
-  }
+      // 2. Через 0,5 сек отправляем боту
+      if (window.Telegram && window.Telegram.WebApp) {
+        setTimeout(() => {
+          Telegram.WebApp.sendData(JSON.stringify({days,kcal,weight:w,target:t,goal}));
+        }, 500);
+      } else {
+        console.warn('Telegram WebApp не доступен');
+      }
+    }
   </script>
 </body>
 </html>
